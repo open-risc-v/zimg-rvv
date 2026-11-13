@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(zimg-rvv C)
+project(zimg-rvv C CXX)
 enable_testing()
 
 # ---------------------------------------------------------------------------

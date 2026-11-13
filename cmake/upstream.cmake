@@ -1,49 +1,25 @@
-# 上游构建接入点（G1 填写；不填也能构建工具，便于先跑通 A/B 框架）。
-#
-# 目标：让 A/B 两侧产出"同名、同路径"的可执行文件，这样 test/run_ab.sh
-# 才能用同一个 cases/*.sh 分别跑 A 和 B。
-#
-# 上游是 CMake 时（最常见）：
-#   add_subdirectory(${SRC_DIR}/<子目录> ${CMAKE_BINARY_DIR}/upstream EXCLUDE_FROM_ALL)
-#   # 打开上游自己的 SIMD 开关，关掉它会改变 A/B 的可比性：
-#   set(<UPSTREAM_SIMD_OPTION> ON CACHE BOOL "" FORCE)
-#   # 需要时把上游 target 的编译选项换成 ${RVV_FLAGS}
-#
-# 上游是 autotools/meson 时（二选一）：
-#   a) 由 scripts/build.sh 先调上游构建系统，把产物放到 build/<preset>/pkg/bin/，
-#      再让 test/run_ab.sh 用 PKG_BIN 指向它（推荐：不改造上游）；
-#   b) 把上游源码列表抄进本文件（像 libspeex-rvv 的 SPEEX_SOURCES 那样），
-#      换来可控的编译选项与确定性源集合。
-#
-# 三条纪律：
-#   1. A/B 两侧的编译选项必须只有"RVV 内核宏"不同；
-#   2. 不要在 baseline 树上打任何补丁 —— 它是唯一可信参照；
-#   3. 源文件列表要显式，不要用 file(GLOB)（上游加文件会悄悄改变基线）。
-#
-# 示例（取消注释并按上游实际情况改写）：
-#
-# add_subdirectory("${SRC_DIR}/lib" "${CMAKE_BINARY_DIR}/upstream" EXCLUDE_FROM_ALL)
-# if(TARGET <upstream_target>)
-#   target_compile_options(<upstream_target> PRIVATE ${RVV_FLAGS})
-#   set(PKG_TARGET <upstream_target> CACHE INTERNAL "")
-# endif()
+# 上游接入：zimg（autotools）→ <build>/pkg/prefix，探针链接 libzimg 静态库。
 
-# --- 交叉构建支持（新增工程默认带上，别删）---------------------------------
-# 外部（scripts/cross-baseline.sh）已经把上游编好到某个前缀时，用 -DPKG_PREFIX 传进来，
-# 本次 configure 就不要再生成 pkg 目标：
-#
-#   set(PKG_ROOT "${CMAKE_BINARY_DIR}/pkg")
-#   if(NOT DEFINED PKG_PREFIX)
-#     set(PKG_PREFIX "${PKG_ROOT}/prefix")
-#     add_custom_target(pkg ALL COMMAND ...)
-#     set(HAVE_PKG_TARGET TRUE)
-#   endif()
-#   add_executable(<harness> test/pkg_<name>.c)
-#   if(HAVE_PKG_TARGET)
-#     add_dependencies(<harness> pkg)
-#   endif()
-#   target_include_directories(<harness> PRIVATE "${PKG_PREFIX}/include")
-#   target_link_directories(<harness> PRIVATE "${PKG_PREFIX}/lib")
-#
-# 上游还依赖别的 riscv 库（如 libpng 依赖 zlib）时，用额外 -D<NAME>_ROOT 分支，
-# 不要指望容器里的发行版包（它们只有宿主架构那一份）。
+set(PKG_ROOT "${CMAKE_BINARY_DIR}/pkg")
+if(NOT DEFINED PKG_PREFIX)
+  set(PKG_PREFIX "${PKG_ROOT}/prefix")
+  add_custom_target(pkg ALL
+    COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/cmake/pkg-build.sh" "${SRC_DIR}" "${PKG_ROOT}"
+    COMMENT "构建上游 zimg（${SRC_DIR}）"
+    VERBATIM)
+  set(HAVE_PKG_TARGET TRUE)
+endif()
+
+add_executable(zimg_harness test/pkg_zimg.c)
+if(HAVE_PKG_TARGET)
+  add_dependencies(zimg_harness pkg)
+endif()
+target_include_directories(zimg_harness PRIVATE "${PKG_PREFIX}/include")
+target_link_directories(zimg_harness PRIVATE "${PKG_PREFIX}/lib")
+# libzimg 是 C++，探针是 C：用 C++ 驱动链接（会带上 libstdc++ 的正确路径）。
+# 不要写 -lstdc++：交叉 sysroot 里只有 libstdc++.so.6，没有无版本号的 .so 符号链接。
+set_target_properties(zimg_harness PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(zimg_harness PRIVATE zimg m)
+target_compile_options(zimg_harness PRIVATE ${RVV_FLAGS})
+
+add_test(NAME zimg_harness COMMAND zimg_harness)
