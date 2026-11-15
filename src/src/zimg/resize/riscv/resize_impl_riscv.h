@@ -19,9 +19,10 @@ namespace zimg::resize {
 
 struct FilterContext;
 
-/* 只做垂直方向（列方向连续，向量化收益最高）。水平方向暂无 RVV 实现，
- * 返回 nullptr 由调用方回落到 C。 */
+/* 垂直方向：输出列连续、每行一组系数，vwmacc 加宽累加（收益最高）。
+ * 水平方向：起点随输出列变化，逐像素 gather + 跨步取系数。 */
 std::unique_ptr<graphengine::Filter> create_resize_impl_v_riscv(const FilterContext &context, unsigned width, PixelType type, unsigned depth);
+std::unique_ptr<graphengine::Filter> create_resize_impl_h_riscv(const FilterContext &context, unsigned height, PixelType type, unsigned depth);
 
 } // namespace zimg::resize
 
