@@ -166,6 +166,12 @@ libneon_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(srcdir)/src/zimg $(graphengineflags)
 libzimg_internal_la_LIBADD += libneon.la
 endif # ARMSIMD
 
+if RVVSIMD
+libzimg_internal_la_SOURCES += \
+	src/zimg/resize/riscv/resize_impl_riscv.cpp \
+	src/zimg/resize/riscv/resize_impl_riscv.h
+endif # RVVSIMD
+
 if X86SIMD
 noinst_LTLIBRARIES += libavx2.la libavx512.la libavx512_vnni.la
 

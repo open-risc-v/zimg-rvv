@@ -72,9 +72,11 @@ AC_SUBST([STL_LIBS], [$STL_LIBS])
 
 ARM="no"
 X86="no"
+RISCV="no"
 
 AS_CASE([$host_cpu],
         [aarch64], [BITS="64" ARM="yes"],
+        [riscv64], [BITS="64" RISCV="yes"],
         [i?86],    [BITS="32" X86="yes"],
         [x86_64],  [BITS="64" X86="yes"])
 
@@ -83,6 +85,12 @@ AS_IF([test "x$ARM" = "xyes" && test "x$enable_simd" != "xno"],
         AC_DEFINE([ZIMG_ARM])
         AC_SUBST([NEON_CFLAGS], [$NEON_CFLAGS])
         enable_arm_simd=yes
+      ])
+
+AS_IF([test "x$RISCV" = "xyes" && test "x$enable_simd" != "xno"],
+      [
+        AC_DEFINE([ZIMG_RVV])
+        enable_riscv_simd=yes
       ])
 
 AS_IF([test "x$X86" = "xyes" && test "x$enable_simd" != "xno"],
@@ -100,6 +108,7 @@ AM_CONDITIONAL([TESTAPP],        [test "x$enable_testapp" = "xyes"])
 AM_CONDITIONAL([EXAMPLES],       [test "x$enable_example" = "xyes"])
 AM_CONDITIONAL([UNIT_TEST],      [test "x$enable_unit_test" = "xyes"])
 AM_CONDITIONAL([ARMSIMD],        [test "x$enable_arm_simd" = "xyes"])
+AM_CONDITIONAL([RVVSIMD],        [test "x$enable_riscv_simd" = "xyes"])
 AM_CONDITIONAL([X86SIMD],        [test "x$enable_x86_simd" = "xyes"])
 AM_CONDITIONAL([X86SIMD_AVX512], [test "x$enable_x86_simd_avx512" = "xyes"])
 

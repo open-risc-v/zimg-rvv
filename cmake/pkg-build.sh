@@ -13,8 +13,9 @@ NPROC=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)
 ./autogen.sh >/dev/null 2>&1
 HOST_ARG=""
 [ -n "${HOST:-}" ] && HOST_ARG="--host=${HOST}"
+CFLAGS="${EXTRA_C_FLAGS:-}" CXXFLAGS="${EXTRA_C_FLAGS:-}" \
 ./configure --prefix="${OUT}/prefix" --disable-shared --enable-static \
-  --disable-testapp --disable-example --disable-unit-test ${HOST_ARG} >/dev/null
+  --disable-testapp --disable-example --disable-unit-test ${HOST_ARG} ${EXTRA_CONF:-} >/dev/null
 make -j"${NPROC}" >/dev/null
 make install >/dev/null
 echo "== 上游 zimg 构建完成：${OUT}/prefix"

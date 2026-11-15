@@ -18,6 +18,8 @@ enum class CPUClass {
 	X86_AVX512_CLX, // VNNI
 #elif defined(ZIMG_ARM)
 	ARM_NEON,
+#elif defined(ZIMG_RVV)
+	RISCV_RVV,
 #endif
 };
 

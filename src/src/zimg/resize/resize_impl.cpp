@@ -12,6 +12,8 @@
   #include "x86/resize_impl_x86.h"
 #elif defined(ZIMG_ARM)
   #include "arm/resize_impl_arm.h"
+#elif defined(ZIMG_RVV)
+  #include "riscv/resize_impl_riscv.h"
 #endif
 
 namespace zimg::resize {
@@ -257,6 +259,12 @@ std::unique_ptr<graphengine::Filter> ResizeImplBuilder::create() const
 	ret = horizontal ?
 		create_resize_impl_h_arm(filter_ctx, src_height, type, depth, cpu) :
 		create_resize_impl_v_arm(filter_ctx, src_width, type, depth, cpu);
+#elif defined(ZIMG_RVV)
+	/* 只有垂直方向有 RVV 实现；水平方向回落到 C。
+	 * 必须尊重 cpu 参数：ZIMG_CPU_NONE 表示调用方要求可移植 C 路径（基准对照的实现），
+	 * 早期版本忽略它导致 CPU_NONE 也在跑 RVV，A/B 口径失真。 */
+	if (!horizontal && (cpu_is_autodetect(cpu) || cpu >= CPUClass::RISCV_RVV))
+		ret = create_resize_impl_v_riscv(filter_ctx, src_width, type, depth);
 #endif
 	if (!ret && horizontal)
 		ret = std::make_unique<ResizeImplH_C>(filter_ctx, src_height, type, depth);
