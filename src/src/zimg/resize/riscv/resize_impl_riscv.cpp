@@ -51,7 +51,7 @@ void resize_line_v_u16_rvv(const FilterContext &filter, const graphengine::Buffe
 			t = __riscv_vmin_vx_i32m2(t, static_cast<int32_t>(pixel_max), vl);
 			/* vnclipu 的源必须是 u32m2（GCC 13/14 不接受 i32m2） */
 			vuint32m2_t u = __riscv_vreinterpret_v_i32m2_u32m2(t);
-			vuint16m1_t o = __riscv_vnclipu_wx_u16m1(u, 0, vl);
+			vuint16m1_t o = __riscv_vnclipu_wx_u16m1(u, 0, __RISCV_VXRM_RNU, vl);
 			__riscv_vse16_v_u16m1(const_cast<uint16_t *>(dst_line) + j, o, vl);
 		}
 
@@ -97,7 +97,7 @@ void resize_line_h_u16_rvv(const FilterContext &filter, const uint16_t *src, uin
 			t = __riscv_vmax_vx_i32m2(t, 0, vl);
 			t = __riscv_vmin_vx_i32m2(t, static_cast<int32_t>(pixel_max), vl);
 			vuint32m2_t u = __riscv_vreinterpret_v_i32m2_u32m2(t);
-			vuint16m1_t o = __riscv_vnclipu_wx_u16m1(u, 0, vl);
+			vuint16m1_t o = __riscv_vnclipu_wx_u16m1(u, 0, __RISCV_VXRM_RNU, vl);
 			__riscv_vse16_v_u16m1(const_cast<uint16_t *>(dst) + j, o, vl);
 		}
 
