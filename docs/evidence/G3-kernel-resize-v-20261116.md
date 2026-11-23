@@ -3,7 +3,7 @@
 - 日期：2026-11-16
 - 上游：`sekrit-twc/zimg` @ `67e0603271c080e22c8429856dd4a8a56587e61e`
 - 构建：autotools 静态；两侧同 `-march=rv64gcv`，唯一变量 `--disable-simd`
-- 目标板：SpacemiT K3 / Bianbu，`Linux k3 6.18.3 riscv64`，RVV 1.0
+- 目标板：SpacemiT K3 / <distro>，`Linux k3 6.18.3 riscv64`，RVV 1.0
 
 ## 1. 为什么选垂直方向
 
